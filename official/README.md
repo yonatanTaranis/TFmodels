@@ -6,16 +6,20 @@ and kept up to date with the latest TensorFlow API. They should also be
 reasonably optimized for fast performance while still being easy to read.
 
 These models are used as end-to-end tests, ensuring that the models run with the
-same speed and performance with each new TensorFlow build.
+same or improved speed and performance with each new TensorFlow build.
 
 ## Tensorflow releases
 
-The master branch of the models are **in development**, and they target the
+The master branch of the models are **in development** with TensorFlow 2.x, and
+they target the
 [nightly binaries](https://github.com/tensorflow/tensorflow#installation) built
 from the
 [master branch of TensorFlow](https://github.com/tensorflow/tensorflow/tree/master).
-We aim to keep them backwards compatible with the latest release when possible
-(currently TensorFlow 1.5), but we cannot always guarantee compatibility.
+You may start from installing with pip:
+
+```shell
+pip install tf-nightly
+```
 
 **Stable versions** of the official models targeting releases of TensorFlow are
 available as tagged branches or
@@ -53,13 +57,24 @@ installable Official Models package. This is being tracked in
 **NOTE:** Please make sure to follow the steps in the
 [Requirements](#requirements) section.
 
-*   [bert](bert): A powerful pre-trained language representation model: BERT,
-    which stands for Bidirectional Encoder Representations from Transformers.
-*   [mnist](mnist): A basic model to classify digits from the MNIST dataset.
-*   [resnet](vision/image_classification): A deep residual network that can be
-    used to classify both CIFAR-10 and ImageNet's dataset of 1000 classes.
+### Natural Language Processing
+
+*   [bert](nlp/bert): A powerful pre-trained language representation model:
+    BERT, which stands for Bidirectional Encoder Representations from
+    Transformers.
 *   [transformer](transformer): A transformer model to translate the WMT English
     to German dataset.
+*   [xlnet](nlp/xlnet): XLNet: Generalized Autoregressive Pretraining for
+    Language Understanding
+
+### Computer Vision
+
+*   [resnet](vision/image_classification): A deep residual network that can be
+    used to classify both CIFAR-10 and ImageNet's dataset of 1000 classes.
+
+### Others
+
+*   [mnist](mnist): A basic model to classify digits from the MNIST dataset.
 *   [ncf](recommendation): Neural Collaborative Filtering model for
     recommendation tasks.
 
@@ -90,11 +105,13 @@ The team is actively working to add new models to the repository. Every model
 should follow the following guidelines, to uphold the our objectives of
 readable, usable, and maintainable code.
 
-**General guidelines** * Code should be well documented and tested. * Runnable
-from a blank environment with relative ease. * Trainable on: single GPU/CPU
-(baseline), multiple GPUs, TPU * Compatible with Python 2 and 3 (using
-[six](https://pythonhosted.org/six/) when necessary) * Conform to
-[Google Python Style Guide](https://github.com/google/styleguide/blob/gh-pages/pyguide.md)
+**General guidelines**
+
+* Code should be well documented and tested.
+* Runnable from a blank environment with relative ease.
+* Trainable on: single GPU/CPU (baseline), multiple GPUs, TPU
+* Compatible with Python 2 and 3 (using [six](https://pythonhosted.org/six/) when necessary)
+* Conform to [Google Python Style Guide](https://github.com/google/styleguide/blob/gh-pages/pyguide.md)
 
 **Implementation guidelines**
 

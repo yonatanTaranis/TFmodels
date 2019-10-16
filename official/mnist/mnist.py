@@ -19,6 +19,7 @@ from __future__ import print_function
 
 from absl import app as absl_app
 from absl import flags
+from six.moves import range
 import tensorflow as tf  # pylint: disable=g-bad-import-order
 
 from official.mnist import dataset
@@ -88,8 +89,11 @@ def create_model(data_format):
 
 
 def define_mnist_flags():
+  """Defines flags for mnist."""
   flags_core.define_base(clean=True, train_epochs=True,
-                         epochs_between_evals=True)
+                         epochs_between_evals=True, stop_threshold=True,
+                         num_gpu=True, hooks=True, export_dir=True,
+                         distribution_strategy=True)
   flags_core.define_performance(inter_op=True, intra_op=True,
                                 num_parallel_calls=False,
                                 all_reduce_alg=True)

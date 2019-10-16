@@ -200,7 +200,7 @@ class Transformer(tf.keras.Model):
       # Prepare inputs to decoder layers by shifting targets, adding positional
       # encoding and applying dropout.
       decoder_inputs = self.embedding_softmax_layer(targets)
-      decoder_inputs = tf.cast(decoder_inputs, self.params['dtype'])
+      decoder_inputs = tf.cast(decoder_inputs, self.params["dtype"])
       attention_bias = tf.cast(attention_bias, self.params["dtype"])
       with tf.name_scope("shift_targets"):
         # Shift targets to the right, and remove the last element
@@ -218,7 +218,7 @@ class Transformer(tf.keras.Model):
 
       # Run values
       decoder_self_attention_bias = model_utils.get_decoder_self_attention_bias(
-          length, dtype=self.params['dtype'])
+          length, dtype=self.params["dtype"])
       outputs = self.decoder_stack(
           decoder_inputs,
           encoder_outputs,
@@ -290,6 +290,7 @@ class Transformer(tf.keras.Model):
 
   def predict(self, encoder_outputs, encoder_decoder_attention_bias, training):
     """Return predicted sequence."""
+    encoder_outputs = tf.cast(encoder_outputs, self.params["dtype"])
     if self.params["padded_decode"]:
       batch_size = encoder_outputs.shape.as_list()[0]
       input_length = encoder_outputs.shape.as_list()[1]
@@ -310,16 +311,18 @@ class Transformer(tf.keras.Model):
     # pylint: disable=g-complex-comprehension
     init_decode_length = (
         max_decode_length if self.params["padded_decode"] else 0)
+    num_heads = self.params["num_heads"]
+    dim_per_head = self.params["hidden_size"] // num_heads
     cache = {
         "layer_%d" % layer: {
             "k":
                 tf.zeros([
-                    batch_size, init_decode_length, self.params["hidden_size"]
+                    batch_size, init_decode_length, num_heads, dim_per_head
                 ],
                          dtype=self.params["dtype"]),
             "v":
                 tf.zeros([
-                    batch_size, init_decode_length, self.params["hidden_size"]
+                    batch_size, init_decode_length, num_heads, dim_per_head
                 ],
                          dtype=self.params["dtype"])
         } for layer in range(self.params["num_hidden_layers"])
@@ -354,27 +357,21 @@ class LayerNormalization(tf.keras.layers.Layer):
   """Applies layer normalization."""
 
   def __init__(self, hidden_size):
-    super(LayerNormalization, self).__init__()
+    # Pass dtype=float32, as we have not yet tested if layer norm is numerically
+    # stable in float16 and bfloat16.
+    super(LayerNormalization, self).__init__(dtype="float32")
     self.hidden_size = hidden_size
 
   def build(self, input_shape):
     """Builds the layer."""
-    # Passing experimental_autocast=False causes these variables to not be
-    # automatically casted to fp16 when mixed precision is used. Since we use
-    # float32 in call() for numeric stability, we do not want variables to be
-    # casted to fp16.
     self.scale = self.add_weight(
         "layer_norm_scale",
         shape=[self.hidden_size],
-        dtype="float32",
-        initializer=tf.ones_initializer(),
-        experimental_autocast=False)
+        initializer=tf.ones_initializer())
     self.bias = self.add_weight(
         "layer_norm_bias",
         shape=[self.hidden_size],
-        dtype="float32",
-        initializer=tf.zeros_initializer(),
-        experimental_autocast=False)
+        initializer=tf.zeros_initializer())
     super(LayerNormalization, self).build(input_shape)
 
   def get_config(self):
@@ -383,13 +380,10 @@ class LayerNormalization(tf.keras.layers.Layer):
     }
 
   def call(self, x, epsilon=1e-6):
-    input_dtype = x.dtype
-    if input_dtype == tf.float16:
-      x = tf.cast(x, tf.float32)
     mean = tf.reduce_mean(x, axis=[-1], keepdims=True)
     variance = tf.reduce_mean(tf.square(x - mean), axis=[-1], keepdims=True)
     norm_x = (x - mean) * tf.math.rsqrt(variance + epsilon)
-    return tf.cast(norm_x * self.scale + self.bias, input_dtype)
+    return norm_x * self.scale + self.bias
 
 
 class PrePostProcessingWrapper(tf.keras.layers.Layer):

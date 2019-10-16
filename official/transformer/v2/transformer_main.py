@@ -171,6 +171,11 @@ class TransformerTask(object):
           "mixed_float16", loss_scale=loss_scale)
       tf.compat.v2.keras.mixed_precision.experimental.set_policy(policy)
 
+    if params["dtype"] == tf.bfloat16:
+      policy = tf.compat.v2.keras.mixed_precision.experimental.Policy(
+          "mixed_bfloat16")
+      tf.compat.v2.keras.mixed_precision.experimental.set_policy(policy)
+
     self.distribution_strategy = distribution_utils.get_distribution_strategy(
         distribution_strategy=flags_obj.distribution_strategy,
         num_gpus=num_gpus,
@@ -180,13 +185,13 @@ class TransformerTask(object):
       if not params["static_batch"]:
         raise ValueError("TPU requires static batch for input data.")
     else:
-      print("Running transformer with num_gpus =", num_gpus)
+      logging.info("Running transformer with num_gpus = %d", num_gpus)
 
     if self.distribution_strategy:
-      print("For training, using distribution strategy: ",
-            self.distribution_strategy)
+      logging.info("For training, using distribution strategy: %s",
+                   self.distribution_strategy)
     else:
-      print("Not using any distribution strategy.")
+      logging.info("Not using any distribution strategy.")
 
   @property
   def use_tpu(self):
@@ -289,7 +294,8 @@ class TransformerTask(object):
           else flags_obj.steps_between_evals)
       current_iteration = current_step // flags_obj.steps_between_evals
 
-      print("Start train iteration at global step:{}".format(current_step))
+      logging.info(
+          "Start train iteration at global step:{}".format(current_step))
       history = None
       if params["use_ctl"]:
         if not self.use_tpu:
@@ -324,7 +330,7 @@ class TransformerTask(object):
         current_step += train_steps_per_eval
         logging.info("Train history: {}".format(history.history))
 
-      print("End train iteration at global step:{}".format(current_step))
+      logging.info("End train iteration at global step:{}".format(current_step))
 
       if (flags_obj.bleu_source and flags_obj.bleu_ref):
         uncased_score, cased_score = self.eval()
@@ -401,7 +407,7 @@ class TransformerTask(object):
       else:
         model.load_weights(init_weight_path)
     else:
-      print("Weights not loaded from path:{}".format(init_weight_path))
+      logging.info("Weights not loaded from path:{}".format(init_weight_path))
 
   def _create_optimizer(self):
     """Creates optimizer."""

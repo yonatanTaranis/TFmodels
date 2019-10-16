@@ -22,7 +22,7 @@ import functools
 import os
 
 # pylint: disable=wrong-import-order
-from absl import app as absl_app
+from absl import app
 from absl import flags
 import numpy as np
 import tensorflow as tf
@@ -46,9 +46,11 @@ def define_flags():
                          train_epochs=True,
                          epochs_between_evals=False,
                          stop_threshold=False,
+                         num_gpu=True,
                          hooks=False,
                          export_dir=False,
-                         run_eagerly=True)
+                         run_eagerly=True,
+                         distribution_strategy=True)
 
   flags_core.define_performance(num_parallel_calls=False,
                                 inter_op=False,
@@ -136,15 +138,8 @@ def build_model(vocab_size,
   Returns:
     A Keras Model.
   """
-  # In V1 there is a separate class for CuDNN. In V2 the LSTM class will use
-  # CuDNN automatically if applicable.
-  if use_cudnn and not keras_utils.is_v2_0():
-    LSTM = tf.compat.v1.CuDNNLSTM
-  else:
-    # The LSTM call was rewritten to be more efficient in 2.0. However because
-    # we want to compare the performance of the two runtimes, we force both
-    # V1 and V2 to use the more efficient implementation.
-    LSTM = functools.partial(tf.keras.layers.LSTM, implementation=2)
+  assert keras_utils.is_v2_0()
+  LSTM = functools.partial(tf.keras.layers.LSTM, implementation=2)
 
   # By indirecting the activation through a lambda layer, the logic to dispatch
   # to CuDNN in V2 doesn't trigger and we force the LSTM to run in non-CuDNN
@@ -303,4 +298,4 @@ def main(_):
 
 if __name__ == '__main__':
   define_flags()
-  absl_app.run(main)
+  app.run(main)

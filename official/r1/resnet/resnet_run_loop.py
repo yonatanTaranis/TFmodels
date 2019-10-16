@@ -110,7 +110,7 @@ def process_record_dataset(dataset,
   # Operations between the final prefetch and the get_next call to the iterator
   # will happen synchronously during run time. We prefetch here again to
   # background all of the above processing work and keep it out of the
-  # critical training path. Setting buffer_size to tf.contrib.data.AUTOTUNE
+  # critical training path. Setting buffer_size to tf.data.experimental.AUTOTUNE
   # allows DistributionStrategies to adjust how many batches to fetch based
   # on how many devices are present.
   dataset = dataset.prefetch(buffer_size=tf.data.experimental.AUTOTUNE)
@@ -724,7 +724,9 @@ def define_resnet_flags(resnet_size_choices=None, dynamic_loss_scale=False,
                         fp16_implementation=False):
   """Add flags and validators for ResNet."""
   flags_core.define_base(clean=True, train_epochs=True,
-                         epochs_between_evals=True)
+                         epochs_between_evals=True, stop_threshold=True,
+                         num_gpu=True, hooks=True, export_dir=True,
+                         distribution_strategy=True)
   flags_core.define_performance(num_parallel_calls=False,
                                 inter_op=True,
                                 intra_op=True,
